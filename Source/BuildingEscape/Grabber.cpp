@@ -4,6 +4,8 @@
 #include "GameFramework/PlayerController.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
+#include "Components/InputComponent.h"
 
 // Sets default values for this component's properties
 UGrabber::UGrabber()
@@ -21,8 +23,56 @@ void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	FindPhysicsHandleComponent();
+	SetupInputComponent();
+}
+
+//Binds input action to grabbing code
+void UGrabber::SetupInputComponent()
+{
+	InputComponent = GetOwner()->FindComponentByClass<UInputComponent>();
+	if (InputComponent)
+	{
+		InputComponent->BindAction("Grab", IE_Pressed, this, &UGrabber::Grab);
+		InputComponent->BindAction("Grab", IE_Released, this, &UGrabber::Release);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Input Component not found on %s"), *(GetOwner()->GetName()));
+	}
+}
+
+//Attaches physics handle to this 
+void UGrabber::FindPhysicsHandleComponent()
+{
+	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
+	if (PhysicsHandle)
+	{
+		///working fine
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Physics Handle not found on object %s"), *(GetOwner()->GetName()));
+	}
+}
+
+void UGrabber::Grab()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Grab pressed"));
+
+	///LINE TRACE out to set distance and hit any actors which colission channel Physics Body
+	GetFirstPhysicsBodyInReach();
+
+	///Attach a physics handle to this actor
+
+	//TODO Attach physics handle
+}
+
+void UGrabber::Release()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Grab released"));
+
+	//TODO Release physics handle
 }
 
 
@@ -31,14 +81,19 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	///If physics handle is holding onto something
+	///Move it's position each tick
+	
+}
 
+const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
+{
 	FVector PlayerLocation;
 	FRotator PlayerRotation;
 
 	//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
 	APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
 	ThisPlayerController->GetPlayerViewPoint(PlayerLocation, PlayerRotation);
-	/*UE_LOG(LogTemp, Warning, TEXT("Position: %s || Rotation: %s"), *PlayerLocation.ToString(), *PlayerRotation.ToString());*/
 
 	FVector LineTraceEnd = PlayerLocation + PlayerRotation.Vector() * Reach;
 
@@ -69,5 +124,6 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Actor being hit is: %s"), *(ActorHit->GetName()));
 	}
+	return FHitResult();
 }
 
