@@ -6,6 +6,7 @@
 #include "DrawDebugHelpers.h"
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "Components/InputComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 // Sets default values for this component's properties
 UGrabber::UGrabber()
@@ -61,18 +62,25 @@ void UGrabber::Grab()
 	UE_LOG(LogTemp, Warning, TEXT("Grab pressed"));
 
 	///LINE TRACE out to set distance and hit any actors which colission channel Physics Body
-	GetFirstPhysicsBodyInReach();
+	auto HitResult = GetFirstPhysicsBodyInReach();
+	auto ComponentToGrab = HitResult.GetComponent();
+	auto ActorHit = HitResult.GetActor();
 
 	///Attach a physics handle to this actor
-
-	//TODO Attach physics handle
+	if(ActorHit)
+	{
+		PhysicsHandle->GrabComponentAtLocation(
+			ComponentToGrab,
+			NAME_None,
+			ComponentToGrab->GetOwner()->GetActorLocation()
+		);
+	}
 }
 
 void UGrabber::Release()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Grab released"));
-
-	//TODO Release physics handle
+	PhysicsHandle->ReleaseComponent();
 }
 
 
@@ -82,7 +90,25 @@ void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorCompone
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	///If physics handle is holding onto something
-	///Move it's position each tick
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		///Move it's position each tick
+		FVector PlayerLocation;
+		FRotator PlayerRotation;
+
+		APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
+
+		//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
+		ThisPlayerController->GetPlayerViewPoint(
+			PlayerLocation,
+			PlayerRotation
+		);
+
+		FVector LineTraceEnd = PlayerLocation + PlayerRotation.Vector() * Reach;
+
+		PhysicsHandle->SetTargetLocation(LineTraceEnd);
+	}
+	
 	
 }
 
@@ -91,9 +117,13 @@ const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
 	FVector PlayerLocation;
 	FRotator PlayerRotation;
 
-	//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
 	APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
-	ThisPlayerController->GetPlayerViewPoint(PlayerLocation, PlayerRotation);
+
+	//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
+	ThisPlayerController->GetPlayerViewPoint(
+		PlayerLocation, 
+		PlayerRotation
+	);
 
 	FVector LineTraceEnd = PlayerLocation + PlayerRotation.Vector() * Reach;
 
@@ -124,6 +154,6 @@ const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Actor being hit is: %s"), *(ActorHit->GetName()));
 	}
-	return FHitResult();
+	return Hit;
 }
 
