@@ -44,4 +44,7 @@ private:
 	void SetupInputComponent();
 
 	void FindPhysicsHandleComponent();
+
+	//Returns two vectors, the first is the player location, and the second is a point a set distance in front of the player viewpoint
+	FTwoVectors GetLineTracePoints();
 };

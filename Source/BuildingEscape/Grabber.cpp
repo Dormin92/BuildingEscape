@@ -7,6 +7,7 @@
 #include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "Math/TwoVectors.h"
 
 // Sets default values for this component's properties
 UGrabber::UGrabber()
@@ -14,18 +15,26 @@ UGrabber::UGrabber()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
 }
-
 
 // Called when the game starts
 void UGrabber::BeginPlay()
 {
 	Super::BeginPlay();
-
 	FindPhysicsHandleComponent();
 	SetupInputComponent();
+}
+
+// Called every frame
+void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	///If physics handle is holding onto something move it's position each tick
+	if (PhysicsHandle->GrabbedComponent)
+	{
+		PhysicsHandle->SetTargetLocation(GetLineTracePoints().v2);
+	}
 }
 
 //Binds input action to grabbing code
@@ -43,117 +52,67 @@ void UGrabber::SetupInputComponent()
 	}
 }
 
-//Attaches physics handle to this 
+//Checks to see if Physics Handle exists
 void UGrabber::FindPhysicsHandleComponent()
 {
 	PhysicsHandle = GetOwner()->FindComponentByClass<UPhysicsHandleComponent>();
-	if (PhysicsHandle)
-	{
-		///working fine
-	}
-	else
+	if (PhysicsHandle == nullptr)
 	{
 		UE_LOG(LogTemp, Error, TEXT("Physics Handle not found on object %s"), *(GetOwner()->GetName()));
 	}
 }
 
+//Grabs object in front of player when button is pressed
 void UGrabber::Grab()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Grab pressed"));
-
-	///LINE TRACE out to set distance and hit any actors which colission channel Physics Body
+	///LINE TRACE out to set distance and hit any actors with collision channel = 'Physics Body'
 	auto HitResult = GetFirstPhysicsBodyInReach();
 	auto ComponentToGrab = HitResult.GetComponent();
 	auto ActorHit = HitResult.GetActor();
 
-	///Attach a physics handle to this actor
+	///Attach a physics handle to this actor that's been hit
 	if(ActorHit)
 	{
-		PhysicsHandle->GrabComponentAtLocation(
+		PhysicsHandle->GrabComponentAtLocationWithRotation(
 			ComponentToGrab,
 			NAME_None,
-			ComponentToGrab->GetOwner()->GetActorLocation()
+			ComponentToGrab->GetOwner()->GetActorLocation(),
+			ComponentToGrab->GetOwner()->GetActorRotation()
 		);
 	}
 }
 
 void UGrabber::Release()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Grab released"));
 	PhysicsHandle->ReleaseComponent();
 }
 
-
-// Called every frame
-void UGrabber::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+FTwoVectors UGrabber::GetLineTracePoints()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	///Query parameters
+	FVector PlayerLocation;
+	FRotator PlayerRotation;
+	APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
 
-	///If physics handle is holding onto something
-	if (PhysicsHandle->GrabbedComponent)
-	{
-		///Move it's position each tick
-		FVector PlayerLocation;
-		FRotator PlayerRotation;
+	ThisPlayerController->GetPlayerViewPoint(
+		PlayerLocation,
+		PlayerRotation
+	);
 
-		APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
-
-		//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
-		ThisPlayerController->GetPlayerViewPoint(
-			PlayerLocation,
-			PlayerRotation
-		);
-
-		FVector LineTraceEnd = PlayerLocation + PlayerRotation.Vector() * Reach;
-
-		PhysicsHandle->SetTargetLocation(LineTraceEnd);
-	}
-	
-	
+	return FTwoVectors(PlayerLocation, PlayerLocation + PlayerRotation.Vector() * Reach);
 }
 
 const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
 {
-	FVector PlayerLocation;
-	FRotator PlayerRotation;
-
-	APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
-
-	//The following is a 'void getter' function. Never seen one before. Takes OUTPUT parameters instead of INPUT parameters
-	ThisPlayerController->GetPlayerViewPoint(
-		PlayerLocation, 
-		PlayerRotation
-	);
-
-	FVector LineTraceEnd = PlayerLocation + PlayerRotation.Vector() * Reach;
-
-	DrawDebugLine(
-		GetWorld(),
-		PlayerLocation,
-		LineTraceEnd,
-		FColor(0, 0, 255),
-		false,
-		0.0f,
-		0.0f,
-		2.0f
-	);
-
 	FHitResult Hit;
+	FTwoVectors TracePoints = GetLineTracePoints();
 	FCollisionQueryParams TraceParameters(FName(TEXT("")), false, GetOwner());
 	GetWorld()->LineTraceSingleByObjectType(
 		Hit,
-		PlayerLocation,
-		LineTraceEnd,
+		TracePoints.v1,
+		TracePoints.v2,
 		FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
 		TraceParameters
 	);
-
-	AActor* ActorHit = Hit.GetActor();
-
-	if (ActorHit)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Actor being hit is: %s"), *(ActorHit->GetName()));
-	}
 	return Hit;
 }
-
