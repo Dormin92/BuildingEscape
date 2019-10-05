@@ -9,6 +9,8 @@
 #include "Components/PrimitiveComponent.h"
 #include "Math/TwoVectors.h"
 
+#define OUT
+
 // Sets default values for this component's properties
 UGrabber::UGrabber()
 {
@@ -95,8 +97,8 @@ FTwoVectors UGrabber::GetLineTracePoints()
 	APlayerController* ThisPlayerController = GetWorld()->GetFirstPlayerController();
 
 	ThisPlayerController->GetPlayerViewPoint(
-		PlayerLocation,
-		PlayerRotation
+		OUT PlayerLocation,
+		OUT PlayerRotation
 	);
 
 	return FTwoVectors(PlayerLocation, PlayerLocation + PlayerRotation.Vector() * Reach);
