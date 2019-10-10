@@ -112,7 +112,7 @@ const FHitResult UGrabber::GetFirstPhysicsBodyInReach()
 	FTwoVectors TracePoints = GetLineTracePoints();
 	FCollisionQueryParams TraceParameters(FName(TEXT("")), false, GetOwner());
 	GetWorld()->LineTraceSingleByObjectType(
-		Hit,
+		OUT Hit,
 		TracePoints.v1,
 		TracePoints.v2,
 		FCollisionObjectQueryParams(ECollisionChannel::ECC_PhysicsBody),
