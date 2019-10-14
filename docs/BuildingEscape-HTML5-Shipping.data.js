@@ -180,6 +180,6 @@ Module['FS_createPath']('/BuildingEscape/Content', 'Paks', true, true);
   }
 
  }
- loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"audio": 0, "start": 53, "crunched": 0, "end": 101, "filename": "/UE4CommandLine.txt"}, {"audio": 0, "start": 101, "crunched": 0, "end": 40174342, "filename": "/BuildingEscape/Content/Paks/BuildingEscape-HTML5.pak"}], "remote_package_size": 40174342, "package_uuid": "8b47b431-fe4c-4f05-b14c-2bac50a06fa9"});
+ loadPackage({"files": [{"audio": 0, "start": 0, "crunched": 0, "end": 53, "filename": "/Manifest_NonUFSFiles_HTML5.txt"}, {"audio": 0, "start": 53, "crunched": 0, "end": 101, "filename": "/UE4CommandLine.txt"}, {"audio": 0, "start": 101, "crunched": 0, "end": 17217598, "filename": "/BuildingEscape/Content/Paks/BuildingEscape-HTML5.pak"}], "remote_package_size": 17217598, "package_uuid": "d585763b-e098-4c5e-900c-0565bf555adc"});
 
 })();
